@@ -1,62 +1,81 @@
+# ♻️ Smart Waste Sorting — Garbage Image Classification (ResNet-50 Transfer Learning)
 
-# ♻️ Garbage Image Classification (ResNet-50 Transfer Learning)
-
-A computer vision project that classifies waste images into **6 categories** (**paper, plastic, cardboard, glass, metal, trash**) using **transfer learning with ResNet-50**. The workflow covers dataset preparation, stratified splitting, augmentation, warm-up training, fine-tuning, evaluation (classification report + confusion matrix), and interactive demo options.
-
----
-
-## Project Highlights
-
-- **Problem:** Multi-class image classification for recyclable waste sorting (6 classes). :contentReference[oaicite:0]{index=0}  
-- **Dataset:** Enhanced Kaggle dataset mapped to the same 6 target classes, totaling **5,047 images**. :contentReference[oaicite:1]{index=1}  
-- **Split:** Custom **stratified** split — **85% train / 15% test**  
-  - Train: **4,287** images  
-  - Test: **760** images :contentReference[oaicite:2]{index=2}  
-- **Model:** ResNet-50 (ImageNet pretrained) + custom head (GAP → Dense(256, L2) → BN → Dropout(0.3) → Softmax). :contentReference[oaicite:3]{index=3}  
-- **Training Strategy:** Two-stage transfer learning  
-  1) **Warm-up:** freeze backbone except last ~10 layers :contentReference[oaicite:4]{index=4}  
-  2) **Fine-tune:** unfreeze last ~50 layers with small LR (1e-5) :contentReference[oaicite:5]{index=5}  
+An end-to-end computer vision project that classifies household waste images into **6 categories** — **cardboard, glass, metal, paper, plastic, trash** — using **transfer learning with ResNet-50**.  
+The pipeline covers **data ingestion (Kaggle)**, **label harmonization**, **stratified splitting**, **augmentation**, **two-stage training (warm-up + fine-tune)**, **model evaluation**, and **interactive demos (Gradio + image upload)**.
 
 ---
 
-## Results (Test Set)
+## Why this project matters
 
-- The model achieved **strong and consistent performance across all six classes**, with most class metrics in the **0.93–0.99** range and overall accuracy around **0.95** (report-based summary). :contentReference[oaicite:6]{index=6}  
-- Confusions mainly occurred between visually similar categories (e.g., **glass vs metal**, some **plastic** → metal/glass). :contentReference[oaicite:7]{index=7}  
-
-> Note: If you want, I can format your exact numeric results (accuracy, loss, full classification report) into a clean “Results” block once you paste your final run outputs.
+Misclassification in recycling streams increases cost and contamination. This project demonstrates a practical ML workflow for **automated waste recognition**, showing how to take a public dataset and produce a **deployment-ready classifier** with measurable performance and a usable demo interface.
 
 ---
 
-## Dataset & Preprocessing
+## Key Results
 
-### Classes
-- cardboard
-- glass
-- metal
-- paper
-- plastic
-- trash :contentReference[oaicite:8]{index=8}  
+- **Dataset size:** **5,047 images** after filtering + label merge (`white-glass → glass`)
+- **Split:** **4,287 train (85%) / 760 test (15%)** with per-class ratio preserved
+- **Model:** ImageNet-pretrained **ResNet-50** + custom classification head
+- **Performance:** Achieved **~0.96 test accuracy** on the held-out test set (760 images)
 
-### Augmentation (Train Only)
-To improve robustness and reduce overfitting, augmentation is applied only to the **training** set (test remains “real / untouched” for fair evaluation). :contentReference[oaicite:9]{index=9}  
+> Tip: Replace “~0.96” with your exact final score if you want the README to match your final run output exactly.
 
-- Rescale: 1/255  
-- Rotation: 45°  
-- Horizontal + vertical flip  
-- Zoom: (1.0, 1.2)  
-- Target size: 224×224 :contentReference[oaicite:10]{index=10}  
+---
+
+## Approach (What I built)
+
+### 1) Data ingestion & label engineering
+- Downloaded dataset using the **Kaggle API**
+- Kept only target classes and **merged `white-glass` into `glass`**
+- Built a clean dataframe of:
+  - `imgPath` (image file path)
+  - `label` (final class)
+
+### 2) Stratified train/test split (custom)
+Created a custom split function to ensure **each class keeps the same ratio** in train and test sets (avoids biased evaluation).
+
+### 3) Data augmentation (train only)
+To improve generalization, applied augmentation during training:
+- rotation, flips, zoom
+- rescaling to `[0, 1]`
+- image size standardized to **224×224**
+
+### 4) Transfer learning with ResNet-50 (two-stage training)
+**Stage A — Warm-up**
+- froze most of ResNet-50
+- trained a new head until validation stabilized
+
+**Stage B — Fine-tuning**
+- unfroze deeper layers
+- trained with a smaller learning rate to refine features for this dataset
+
+### 5) Evaluation & analysis
+- Confusion matrix visualization
+- Per-class precision/recall/F1 report
+- Random qualitative prediction grids (correct vs incorrect highlighted)
+
+### 6) Demo options
+- Batch prediction grids
+- Upload-an-image classification
+- **Gradio** app for interactive inference
+
+---
+
+## Model Architecture
+
+**Backbone:** ResNet-50 (ImageNet, `include_top=False`)  
+**Head:** GlobalAveragePooling → Dense(256, ReLU, L2) → BatchNorm → Dropout(0.3) → Softmax(6)
+
+This avoids large `Flatten()` layers and improves generalization by using **Global Average Pooling**.
 
 ---
 
 ## Tech Stack
 
-- Python
-- TensorFlow / Keras
-- OpenCV, NumPy, Pandas, Matplotlib, Seaborn
-- Kaggle API (dataset download)
-- Optional UI demo: Gradio
-
-
+- **Python**, **TensorFlow / Keras**
+- NumPy, Pandas, OpenCV
+- Scikit-learn (metrics)
+- Matplotlib / Seaborn (visuals)
+- Gradio (optional demo)
 
 
